@@ -100,11 +100,12 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
     // Compute the bound
     // First threshold the first level of the laplacian pyramid
     kdDebug() << "Bound L(0) to give an estimation of L(-1)" << endl;
+//     KisPaintDeviceSP lm1 = gaussianPyramid->levels[1].device;
     KisPaintDeviceSP lm1 = laplacianPyramid->levels[0].device;
     QSize s = laplacianPyramid->levels[0].size;
-    KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
     int depth = lm1->colorSpace()->nColorChannels();
 #if 1
+    KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
     while(not it.isDone())
     {
         float* arr = reinterpret_cast<float*>(it.rawData());
@@ -168,6 +169,7 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
                 for(int i = 0; i < depth; i++)
                 {
                     itDstA[i] += (int)( itLm1A[i] - itLm1BlurA[i] );
+//                     itDstA[i] = (int)( itLm1A[i]  );
                 }
                 ++itLm1Blur;
                 ++itLm1;
