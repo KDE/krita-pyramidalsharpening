@@ -150,24 +150,24 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
         painter.applyMatrix(kernel, rect.x(), rect.y(), rect.width(), rect.height(), BORDER_REPEAT, KisChannelInfo::FLAG_COLOR_AND_ALPHA);
     }
 #endif
+#if 1
     kdDebug() << rect << s << endl;
     // Filter to keep high frequency and add the result to the destination
     {
         kdDebug() << "Add high frequency to the original image" << endl;
         KisHLineIterator itLm1Blur = lm1Blur->createHLineIterator(0, 0, s.width(), false);
         KisHLineIterator itLm1 = lm1->createHLineIterator(0, 0, s.width(), false);
-        KisHLineIterator itDst = dst->createHLineIterator(rect.x(), rect.y(), rect.width(), true);
+        KisHLineIterator itDst = gaussianPyramid->levels[0].device->createHLineIterator(0, 0, s.width(), true);
         for(int y = 0; y < s.height(); y++)
         {
             while(not itDst.isDone())
             {
                 const float* itLm1BlurA = reinterpret_cast<const float*>( itLm1Blur.oldRawData() );
                 const float* itLm1A = reinterpret_cast<const float*>( itLm1.oldRawData() );
-                uchar* itDstA = reinterpret_cast<uchar*>( itDst.rawData() );
+                float* itDstA = reinterpret_cast<float*>( itDst.rawData() );
                 for(int i = 0; i < depth; i++)
                 {
                     itDstA[i] += (int)( itLm1A[i] - itLm1BlurA[i] );
-//                     itDstA[i] = (int)( itLm1A[i] );//- itLm1BlurA[i] );
                 }
                 ++itLm1Blur;
                 ++itLm1;
@@ -179,6 +179,9 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
         }
 
     }
+#endif
+    
+    tlb2.fromFloatDevice(gaussianPyramid->levels[0].device, dst, rect);
     
     delete gaussianPyramid;
     delete laplacianPyramid;
