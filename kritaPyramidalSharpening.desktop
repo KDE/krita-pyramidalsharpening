@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Pyramidal Sharepening Filter
+Comment=Sharpen an image using a pyramidal approach
+ServiceTypes=Krita/Filter
+Type=Service
+X-KDE-Library=kritaPyramidalSharpening
+X-Krita-Version=2
