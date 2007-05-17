@@ -82,7 +82,10 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
     Q_ASSERT(dst != 0);
     KisBasicMathToolbox2 tlb2;
     KisBasicMathToolbox2::Pyramid* gaussianPyramid = tlb2.toGaussianPyramid(src, 5, rect);
+    kdDebug() << "Levels nb in the gaussian pyramid = " << gaussianPyramid->levels.size() << endl;
+    KisBasicMathToolbox2::Pyramid* laplacianPyramid = tlb2.toLaplacianPyramid(gaussianPyramid);
+    kdDebug() << " gaussianPyramid.nbLevels == " << gaussianPyramid->levels.size() << " laplacianPyramid.nbLevels == " << laplacianPyramid->levels.size() << endl;
     delete gaussianPyramid;
-    
+    delete laplacianPyramid;
     setProgressDone(); // Must be called even if you don't really support progression
 }
