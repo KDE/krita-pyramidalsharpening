@@ -81,8 +81,8 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
     Q_ASSERT(src != 0);
     Q_ASSERT(dst != 0);
     KisBasicMathToolbox2 tlb2;
-    KisBasicMathToolbox2::Pyramid* simplePyramid = tlb2.toSimplePyramid(src, 5, rect);
-    delete simplePyramid;
-    setProgressDone(); // Must be called even if you don't really support progression
+    KisBasicMathToolbox2::Pyramid* gaussianPyramid = tlb2.toGaussianPyramid(src, 5, rect);
+    delete gaussianPyramid;
     
+    setProgressDone(); // Must be called even if you don't really support progression
 }
