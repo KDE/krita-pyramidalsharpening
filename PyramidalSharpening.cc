@@ -37,6 +37,8 @@
 #include <kis_global.h>
 #include <kis_types.h>
 #include <kis_selection.h>
+#include <kis_convolution_painter.h>
+#include <kis_transaction.h>
 
 #include <kis_basic_math_toolbox2.h>
 
@@ -75,16 +77,109 @@ KisPyramidalSharpeningFilter::KisPyramidalSharpeningFilter()
 {
 }
 
+
+#include "kis_transform_worker.h"
+#include "kis_filter_strategy.h"
+
+
 void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceSP dst, 
                                    KisFilterConfiguration* config, const QRect& rect ) 
 {
     Q_ASSERT(src != 0);
     Q_ASSERT(dst != 0);
+    double T = 200.0;
+    
     KisBasicMathToolbox2 tlb2;
-    KisBasicMathToolbox2::Pyramid* gaussianPyramid = tlb2.toGaussianPyramid(src, 5, rect);
-    kdDebug() << "Levels nb in the gaussian pyramid = " << gaussianPyramid->levels.size() << endl;
+    kdDebug() << "Compute gaussian pyramid" << endl;
+//     KisBasicMathToolbox2::Pyramid* gaussianPyramid = tlb2.toSimplePyramid(src, 1, rect);
+    KisBasicMathToolbox2::Pyramid* gaussianPyramid = tlb2.toGaussianPyramid(src, 1, rect);
+    kdDebug() << "Compute laplacian pyramid" << endl;
     KisBasicMathToolbox2::Pyramid* laplacianPyramid = tlb2.toLaplacianPyramid(gaussianPyramid);
     kdDebug() << " gaussianPyramid.nbLevels == " << gaussianPyramid->levels.size() << " laplacianPyramid.nbLevels == " << laplacianPyramid->levels.size() << endl;
+    
+    // Compute the bound
+    // First threshold the first level of the laplacian pyramid
+    kdDebug() << "Bound L(0) to give an estimation of L(-1)" << endl;
+    KisPaintDeviceSP lm1 = laplacianPyramid->levels[0].device;
+    QSize s = laplacianPyramid->levels[0].size;
+    KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
+    int depth = lm1->colorSpace()->nColorChannels();
+#if 1
+    while(not it.isDone())
+    {
+        float* arr = reinterpret_cast<float*>(it.rawData());
+        for(int i = 0; i < depth; i++)
+        {
+            if(arr[i] > T)
+            {
+                arr[i] = T;
+            } else if(arr[i] < -T)
+            {
+                arr[i] = -T;
+            }
+        }
+        ++it;
+    }
+#endif
+    // Blur the paint device
+    KisPaintDeviceSP lm1Blur = new KisPaintDevice(*lm1);
+#if 1
+    {
+        kdDebug() << "Compute a blured version of L(-1)" << endl;
+        double a = 0.5;
+        // Compute the kernel
+        KisKernelSP kernel = new KisKernel;
+        kernel->width = 5;
+        kernel->height = 1;
+        kernel->offset = 0;
+        kernel->factor = 0;
+        kernel->data = new Q_INT32[kernel->width];
+        // Kernel == [ 1/4-a/2; 1/4; a; 1/4; 1/4-a/2 ] a \in [0.3; 0.6]
+        kernel->data[0] = (int)(100 * ( 0.25 - 0.5 * a));
+        kernel->data[1] = 25;
+        kernel->data[2] = (int)(100 * a);
+        kernel->data[3] = 25;
+        kernel->data[4] = kernel->data[0];
+        kernel->factor = 2*(kernel->data[0] + kernel->data[1]) + kernel->data[2]; // due to rounding it might not be equal to 100
+        // Do the bluring
+        KisConvolutionPainter painter( lm1Blur );
+        painter.applyMatrix(kernel, rect.x(), rect.y(), rect.width(), rect.height(), BORDER_REPEAT, KisChannelInfo::FLAG_COLOR_AND_ALPHA);
+        KisTransaction("", lm1Blur);
+        kernel->width = 1;
+        kernel->height = 5;
+        painter.applyMatrix(kernel, rect.x(), rect.y(), rect.width(), rect.height(), BORDER_REPEAT, KisChannelInfo::FLAG_COLOR_AND_ALPHA);
+    }
+#endif
+    kdDebug() << rect << s << endl;
+    // Filter to keep high frequency and add the result to the destination
+    {
+        kdDebug() << "Add high frequency to the original image" << endl;
+        KisHLineIterator itLm1Blur = lm1Blur->createHLineIterator(0, 0, s.width(), false);
+        KisHLineIterator itLm1 = lm1->createHLineIterator(0, 0, s.width(), false);
+        KisHLineIterator itDst = dst->createHLineIterator(rect.x(), rect.y(), rect.width(), true);
+        for(int y = 0; y < s.height(); y++)
+        {
+            while(not itDst.isDone())
+            {
+                const float* itLm1BlurA = reinterpret_cast<const float*>( itLm1Blur.oldRawData() );
+                const float* itLm1A = reinterpret_cast<const float*>( itLm1.oldRawData() );
+                uchar* itDstA = reinterpret_cast<uchar*>( itDst.rawData() );
+                for(int i = 0; i < depth; i++)
+                {
+                    itDstA[i] += (int)( itLm1A[i] - itLm1BlurA[i] );
+//                     itDstA[i] = (int)( itLm1A[i] );//- itLm1BlurA[i] );
+                }
+                ++itLm1Blur;
+                ++itLm1;
+                ++itDst;
+            }
+            itLm1Blur.nextRow();
+            itLm1.nextRow();
+            itDst.nextRow();
+        }
+
+    }
+    
     delete gaussianPyramid;
     delete laplacianPyramid;
     setProgressDone(); // Must be called even if you don't really support progression
