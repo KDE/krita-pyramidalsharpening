@@ -37,6 +37,9 @@ public:
     virtual ~KritaPyramidalSharpening();
 };
 
+// This filter is an implementation of
+// "Image Enhancement By Nonlinear Extrapolation in Frequency Space"
+//          Hayit Greenspan, Charles H. Anderson, and Sofia Akber
 class KisPyramidalSharpeningFilter : public KisFilter
 {
 public:

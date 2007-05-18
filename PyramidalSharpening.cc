@@ -73,7 +73,7 @@ KritaPyramidalSharpening::~KritaPyramidalSharpening()
 }
 
 KisPyramidalSharpeningFilter::KisPyramidalSharpeningFilter() 
-    : KisFilter(id(), "PyramidalSharpening", i18n("&Pyramidal sharpening..."))
+    : KisFilter(id(), "PyramidalSharpening", i18n("&Pyramidal sharpening"))
 {
 }
 
@@ -81,13 +81,15 @@ KisPyramidalSharpeningFilter::KisPyramidalSharpeningFilter()
 #include "kis_transform_worker.h"
 #include "kis_filter_strategy.h"
 
-
 void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceSP dst, 
                                    KisFilterConfiguration* config, const QRect& rect ) 
 {
     Q_ASSERT(src != 0);
     Q_ASSERT(dst != 0);
-    double T = 200.0;
+    // See the paper for an explanation on the choice of the parameters
+    double c = 0.45;
+    double scale = 1.1;
+//     double T = 200.0;
     
     KisBasicMathToolbox2 tlb2;
     kdDebug() << "Compute gaussian pyramid" << endl;
@@ -99,27 +101,51 @@ void KisPyramidalSharpeningFilter::process(KisPaintDeviceSP src, KisPaintDeviceS
     
     // Compute the bound
     // First threshold the first level of the laplacian pyramid
-    kdDebug() << "Bound L(0) to give an estimation of L(-1)" << endl;
 //     KisPaintDeviceSP lm1 = gaussianPyramid->levels[1].device;
     KisPaintDeviceSP lm1 = laplacianPyramid->levels[0].device;
     QSize s = laplacianPyramid->levels[0].size;
     int depth = lm1->colorSpace()->nColorChannels();
 #if 1
-    KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
-    while(not it.isDone())
+    kdDebug() << " Find L0Max" << endl;
+    double L0Max;
     {
-        float* arr = reinterpret_cast<float*>(it.rawData());
-        for(int i = 0; i < depth; i++)
+        KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
+        while(not it.isDone())
         {
-            if(arr[i] > T)
+            float* arr = reinterpret_cast<float*>(it.rawData());
+            for(int i = 0; i < depth; i++)
             {
-                arr[i] = T;
-            } else if(arr[i] < -T)
-            {
-                arr[i] = -T;
+                if(arr[i] > L0Max)
+                {
+                    L0Max = arr[i];
+                }
             }
+            ++it;
         }
-        ++it;
+    }
+    double T = (1.0 - c) * L0Max;
+    kdDebug() << " T = " << T << " L0Max = " << L0Max << " c = " << c << " scale = " << scale << endl;
+#endif
+#if 1
+    kdDebug() << "Bound L(0) to give an estimation of L(-1)" << endl;
+    {
+        KisRectIterator it = lm1->createRectIterator(0,0, s.width(), s.height(), true);
+        while(not it.isDone())
+        {
+            float* arr = reinterpret_cast<float*>(it.rawData());
+            for(int i = 0; i < depth; i++)
+            {
+                if(arr[i] > T)
+                {
+                    arr[i] = T;
+                } else if(arr[i] < -T)
+                {
+                    arr[i] = -T;
+                }
+                arr[i] *= scale;
+            }
+            ++it;
+        }
     }
 #endif
     // Blur the paint device
