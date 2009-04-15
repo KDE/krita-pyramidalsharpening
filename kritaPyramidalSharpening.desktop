@@ -18,6 +18,7 @@ Name[uk]=Фільтр пірамідального збільшення різк
 Name[x-test]=xxPyramidal Sharpening Filterxx
 Comment=Sharpen an image using a pyramidal approach.
 Comment[et]=Pildi teravdamine püramidaalselt.
+Comment[fr]=Nettoyer une image utilisant une approche pyramidale
 Comment[ga]=Géaraigh íomhá le cur chuige pirimidiúil.
 Comment[pt]=Aumenta o detalhe de uma imagem com uma abordagem piramidal.
 Comment[pt_BR]=Aumenta o detalhe de uma imagem com uma abordagem piramidal.
