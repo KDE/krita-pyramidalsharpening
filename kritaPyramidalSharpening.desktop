@@ -17,6 +17,7 @@ Name[tr]=Pramidal Bileme Süzgeci
 Name[uk]=Фільтр пірамідального збільшення різкості
 Name[x-test]=xxPyramidal Sharpening Filterxx
 Comment=Sharpen an image using a pyramidal approach.
+Comment[es]=Enfoca una imagen utilizando una aproximación piramidal.
 Comment[et]=Pildi teravdamine püramidaalselt.
 Comment[fr]=Nettoyer une image utilisant une approche pyramidale
 Comment[ga]=Géaraigh íomhá le cur chuige pirimidiúil.
