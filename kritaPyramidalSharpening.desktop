@@ -24,6 +24,7 @@ Comment[ga]=Géaraigh íomhá le cur chuige pirimidiúil.
 Comment[pt]=Aumenta o detalhe de uma imagem com uma abordagem piramidal.
 Comment[pt_BR]=Aumenta o detalhe de uma imagem com uma abordagem piramidal.
 Comment[sv]=Gör en bild skarpare med ett pyramidalt tillvägagångssätt.
+Comment[tr]=Pramidal bir yaklaşım kullanarak bir resmi keskinleştir.
 Comment[uk]=Збільшити різкість за допомогою пірамідального підходу.
 Comment[x-test]=xxSharpen an image using a pyramidal approach.xx
 ServiceTypes=Krita/Filter
